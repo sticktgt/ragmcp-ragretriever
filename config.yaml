@@ -1,0 +1,39 @@
+server:
+  host: 0.0.0.0
+  port: 8080
+
+storage:
+  store_type: pgvector # "milvus" or "pgvector"
+  milvus:
+    uri: http://localhost:19530  # "https://username:password@in01-12a.aws-us-west-2.vectordb.zillizcloud.com:19538
+    collection: doc_vectors
+    drop_old: false
+    auto_id: true
+    alias: default
+  pgvector:
+    host: localhost
+    port: 5432
+    user: postgres
+    password: postgres
+    database: vector_db
+    collection: doc_vectors
+    use_jsonb: true
+
+embedding:
+  provider: liteLLM # "yandexGPT", "liteLLM" or "langchain_fake" ("fake" for 000 dummy embeddings)
+  dim: 256
+  liteLLM:
+    model: yandex-embedding
+    api_base: http://localhost:4000
+    api_key: $$$$$
+    folder_id: $$$$$
+  yandexGPT:
+    api_key: $$$$$
+    folder_id: $$$$$
+    doc_model_name: text-search-doc
+    model_version: latest
+    sleep_interval: 2.0
+    disable_request_logging: false
+
+stop_on_error: true
+debug: false # additional debug logging and actions
