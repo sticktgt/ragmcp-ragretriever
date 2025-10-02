@@ -35,10 +35,10 @@ class PGVectorStore(VectorStoreBase):
         )
 
 
-    def similarity_search_with_score(self, query: str, k: int = 4) -> List[Tuple[Document, float]]:
+    def similarity_search_with_score(self, query: str, k: int = 5, filters: Optional[dict] = None) -> List[Tuple[Document, float]]:
         logger.info(f"Performing vector search for: {query}")
         try:
-            results = self.vstore.similarity_search_with_score(query, k)
+            results = self.vstore.similarity_search_with_score(query, k, filter=filters or None)
             return results
         except Exception as e:
             logger.error(f"[PGVECTOR QUERY ERROR]: {e}")

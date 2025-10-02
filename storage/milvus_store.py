@@ -9,6 +9,23 @@ from .base import VectorStoreBase
 
 logger = get_logger()
 
+def _to_milvus_expr(filters: dict | None) -> Optional[str]:
+    if not filters:
+        return None
+    clauses = []
+    for k, v in filters.items():
+        if isinstance(v, str):
+            # escape quotes
+            v = v.replace('"', '\\"')
+            clauses.append(f'{k} == "{v}"')
+        elif isinstance(v, (int, float)):
+            clauses.append(f"{k} == {v}")
+        elif isinstance(v, bool):
+            clauses.append(f"{k} == {str(v).lower()}")
+        else:
+            # ignore complex types for now
+            continue
+    return " and ".join(clauses) if clauses else None
 
 class MilvusStore(VectorStoreBase):
 
@@ -29,10 +46,14 @@ class MilvusStore(VectorStoreBase):
             raise
 
 
-    def similarity_search_with_score(self, query: str, k: int = 4) -> List[Tuple[Document, float]]:
+    def similarity_search_with_score(self, query: str, k: int = 5, filters: Optional[dict] = None) -> List[Tuple[Document, float]]:
         try:
             logger.info(f"Performing vector search for: {query}")
-            results = self.vstore.similarity_search_with_score(query, k=k)
+
+            expr = _to_milvus_expr(filters)
+            results = self.vstore.similarity_search_with_score(query, k=k, expr=expr) if expr else \
+                      self.vstore.similarity_search_with_score(query, k=k)
+
             return results
         except Exception as e:
             logger.error(f"[MILVUS QUERY ERROR]: {e}")

@@ -19,17 +19,37 @@ storage:
     collection: doc_vectors
     use_jsonb: true
 
+rerank:
+  provider: liteLLM           # "yandexGPT", "liteLLM", "none"
+  top_n: 5
+  liteLLM:                 # used when provider: "litellm" (OpenAI-compatible proxy)
+    model: yandex-embedding   #alias of the proxy route in litellm.yaml
+    api_base: http://localhost:4000/v1
+    api_key: $$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$
+    yandex_model: yandexgpt-lite # e.g., "yandexgpt" or "yandexgpt-lite"
+    disable_logging: false
+    temperature: 0.0
+    timeout: 30
+  yandexGPT:               # used when provider: "yandexgpt" (direct)
+    api_key: $$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$
+    model: yandexgpt-lite # e.g., "yandexgpt" or "yandexgpt-lite"
+    # disable_logging: false
+    temperature: 0.0
+    timeout: 30
+
 embedding:
   provider: liteLLM # "yandexGPT", "liteLLM" or "langchain_fake" ("fake" for 000 dummy embeddings)
   dim: 256
   liteLLM:
     model: yandex-embedding
     api_base: http://localhost:4000
-    api_key: $$$$$
-    folder_id: $$$$$
+    api_key: $$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$
   yandexGPT:
-    api_key: $$$$$
-    folder_id: $$$$$
+    api_key: $$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$
     doc_model_name: text-search-doc
     model_version: latest
     sleep_interval: 2.0

@@ -1,6 +1,6 @@
 import logging
 
-def get_logger(name: str = "retriever") -> logging.Logger:
+def get_logger(name: str = "ragretriever") -> logging.Logger:
     logger = logging.getLogger(name)
     if not logger.handlers:
         logger.setLevel(logging.DEBUG)

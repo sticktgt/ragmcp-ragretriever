@@ -1,0 +1,9 @@
+model_list:
+  - model_name: "yandex-embedding"
+    litellm_params:
+      model: "my-custom-llm/text-search-query"
+
+litellm_settings:
+  drop_params: true
+  custom_provider_map:
+    - {"provider": "my-custom-llm", "custom_handler": custom_handler.my_custom_llm}
