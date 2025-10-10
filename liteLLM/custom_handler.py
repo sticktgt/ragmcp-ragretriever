@@ -179,13 +179,45 @@ class YandexCustomLLM:
         ynx_messages: List[Dict[str, str]] = []
         for m in messages or []:
             role = m.get("role", "user")
-            content = _safe_join_content(m.get("content", ""))
+            text = _safe_join_content(m.get("content", ""))
 
+            # 1) Tool outputs -> fold into 'user' text for Yandex
             if role == "tool":
                 name = m.get("name") or "tool"
-                ynx_messages.append({"role": "user", "text": f"Tool output ({name}):\n{_truncate(content, _TOOL_FLATTEN_MAX_CHARS)}"})
-            else:
-                ynx_messages.append({"role": role, "text": content})
+                txt = _truncate(text, _TOOL_FLATTEN_MAX_CHARS)
+                # always send non-empty text to Yandex
+                if not txt:
+                    txt = "(no tool output provided)"
+                ynx_messages.append({"role": "user", "text": f"Tool output ({name}):\n{txt}"})
+                continue
+
+            # 2) Assistant tool-call turn (usually has empty content) -> skip or summarize
+            if role == "assistant" and (not text or not text.strip()):
+                tool_calls = m.get("tool_calls") or []
+                if tool_calls:
+                    # Optional: summarize what the assistant tried to call (helps the model)
+                    try:
+                        summaries = []
+                        for tc in tool_calls:
+                            fn = (tc.get("function") or {})
+                            nm = fn.get("name") or "function"
+                            args = fn.get("arguments")
+                            if isinstance(args, dict):
+                                args = json.dumps(args, ensure_ascii=False)
+                            summaries.append(f"{nm}({args})")
+                        if summaries:
+                            ynx_messages.append({"role": "user", "text": "Assistant requested tool call(s): " + "; ".join(summaries)})
+                    except Exception:
+                        pass
+        # Do NOT forward an empty assistant message
+                continue
+
+            # 3) Skip any other empty messages to avoid Yandex 400
+            if not text or not text.strip():
+                continue
+
+            # 4) Regular messages
+            ynx_messages.append({"role": role, "text": text})
 
         url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         model_uri = f"gpt://{folder_id}/{yandex_model}"
@@ -326,7 +358,8 @@ class YandexCustomLLM:
             "output_tokens": int(u.get("completion_tokens") or 0),
             "total_tokens": int(u.get("total_tokens") or 0),
         }
-        reasoning = int(((u.get("completionTokensDetails") or {}).get("reasoningTokens") or 0))
+        # if present
+        reasoning = int(((u.get("completion_tokens_details") or {}).get("reasoning_tokens") or 0))
         if reasoning:
             usage_stream["completion_tokens_details"] = {"reasoning_tokens": reasoning}
 
