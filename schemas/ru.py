@@ -35,7 +35,7 @@ class RagSearchArgs(BaseModel):
         ..., description="Пользовательский запрос для поиска. Краткий вопрос или ключевые слова."
     )
     k: Annotated[int, Field(ge=1, le=100)] = Field(
-        5,
+        2,
         description="Размер пула кандидатов из векторного индекса до переранжировки (1–100). Больше — выше полнота, но выше задержка."
     )
     filters: Optional[Dict[str, Any]] = Field(

@@ -25,15 +25,15 @@ rerank:
   liteLLM:                 # used when provider: "litellm" (OpenAI-compatible proxy)
     model: yandex-embedding   #alias of the proxy route in litellm.yaml
     api_base: http://localhost:4000/v1
-    api_key: $$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$
+    api_key: $$$$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$$$
     yandex_model: yandexgpt-lite # e.g., "yandexgpt" or "yandexgpt-lite"
     disable_logging: false
     temperature: 0.0
     timeout: 30
   yandexGPT:               # used when provider: "yandexgpt" (direct)
-    api_key: $$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$
+    api_key: $$$$$$$$$$$$$$C
+    folder_id: $$$$$$$$$$$$$$
     model: yandexgpt-lite # e.g., "yandexgpt" or "yandexgpt-lite"
     # disable_logging: false
     temperature: 0.0
@@ -45,11 +45,11 @@ embedding:
   liteLLM:
     model: yandex-embedding
     api_base: http://localhost:4000
-    api_key: $$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$
+    api_key: $$$$$$$$$$$$$$
+    folder_id: b1g2758uu6otr3b7s64e
   yandexGPT:
-    api_key: $$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$
+    api_key: $$$$$$$$$$$$$$
+    folder_id: b1g2758uu6otr3b7s64e
     doc_model_name: text-search-doc
     model_version: latest
     sleep_interval: 2.0

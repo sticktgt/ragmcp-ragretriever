@@ -36,7 +36,7 @@ class RagSearchArgs(BaseModel):
         description="User query to search for. Provide a concise, information-seeking question or keywords."
     )
     k: Annotated[int, Field(ge=1, le=100)] = Field(
-        5,
+        2,
         description="Candidate pool size from the vector index before any reranking (1–100). Higher = better recall, more latency."
     )
     filters: Optional[Dict[str, Any]] = Field(

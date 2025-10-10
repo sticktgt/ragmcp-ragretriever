@@ -1,9 +1,36 @@
 model_list:
+  - model_name: "yandex-chat"
+    litellm_provider: custom_llm
+    custom_llm: my_custom_llm
+    timeout: 120
+    litellm_params:
+      model: "my-custom-llm/chat"
+      custom_llm_provider_schema: anthropic
+
   - model_name: "yandex-embedding"
+    litellm_provider: custom_llm
+    custom_llm: my_custom_llm
+    timeout: 120
     litellm_params:
       model: "my-custom-llm/text-search-query"
+      custom_llm_provider_schema: anthropic
 
 litellm_settings:
   drop_params: true
+  # avoid mid-stream fallbacks which sometimes inject odd control events
+  num_retries: 0
+  retry_api_calls: false
+  stream_timeout: 0  
+  callbacks: []
+  success_callback: []
+  failure_callback: []
+  streaming_log: false
+  send_telemetry: false
+  general_settings:
+    # These flags reduce any extra streaming decorations/log items
+    log_streaming_events: false
+    verbose: false
+    # if present in your version:
+    disable_streaming_logging: true
   custom_provider_map:
-    - {"provider": "my-custom-llm", "custom_handler": custom_handler.my_custom_llm}
+    - {"provider": "my-custom-llm", "custom_handler": custom_handler.my_custom_llm, "custom_llm_provider_schema": "anthropic"}

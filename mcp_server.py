@@ -60,12 +60,12 @@ async def rag_search(
     rerank = bool(input.rerank)
     
 # 1) vector search (with filters)
-    
+    logger.debug(f"[SEARCH] query={query!r} k={k} filters={(filters or {})!r} rerank={rerank} top_n={top_n}")
+
     store = await _get_store()
     try:
         results = store.similarity_search_with_score(query, k=k, filters=filters)
     except Exception as e:
-        logger.error(f"[SEARCH] Vector search failed: {e}")
         return {"results": [], "error": "search_failed"}
 
     items: List[Dict[str, Any]] = []
