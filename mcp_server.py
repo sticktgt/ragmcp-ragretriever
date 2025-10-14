@@ -2,8 +2,10 @@ from __future__ import annotations
 # from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from mcp.server.fastmcp import FastMCP, Context
-from mcp.server.session import ServerSession
+from mcp.server.fastmcp import FastMCP
+
+from fastapi import FastAPI, Response
+from fastapi.responses import JSONResponse
 
 from .config import CONFIG
 from .utils.logger import get_logger
@@ -22,8 +24,22 @@ logger = get_logger()
 mcp = FastMCP(
     name="RAG Retriever",
     instructions=(
-        "Use `rag.search` to fetch the most relevant chunks from the RAG "
-        "along with scores and provenance. Keep answers concise and cite sources."
+
+        "Используй инструмент `rag.search`, когда для ответа нужны фрагменты из RAG.\n"
+        "Возвращай краткие ответы и обязательно цитируй источники из `provenance` (в приоритете `uri`, иначе `original_name`).\n\n"
+
+        "Аргументы `rag.search` (объект JSON):\n"
+        "- query: string — формулируй на языке пользователя.\n"
+        "- k: integer (1..100, по умолчанию 5) — размер пула кандидатов.\n"
+        "- filters: object|null — детерминированная фильтрация по метаданным (допускаются любые ключи).\n"
+        "- rerank: boolean (по умолчанию false) — включай только если нужна повышенная точность.\n"
+        "- top_n: integer|null — финальная обрезка после переранжировки.\n\n"
+
+        "Правила вызовов инструментов:\n"
+        "- Если нужен доступ к RAG — верни **вызов функции** (tool call) `rag.search` с объектом аргументов.\n"
+        "- **Не печатай** вызов как текст. **Не используй** кодовые блоки/бэктики.\n"
+        "- Не добавляй неописанные поля в аргументы.\n"
+        "- Получив результаты инструмента, сформируй финальный ответ и процитируй источники." \
     ),
 )
 
@@ -51,13 +67,21 @@ async def _get_store() -> Any:
 # ----- tool implementation -----
 @mcp.tool(name="rag.search", description=schema.TOOL_DESCRIPTION)
 async def rag_search(
-    input: schema.RagSearchArgs,
+    query: str,
+    k: int = 2,
+    filters: Optional[Dict[str, Any]] = None,
+    rerank: bool = False,
+    top_n: Optional[int] = None,
 ) -> schema.RagSearchOutput:
+    input = schema.RagSearchArgs(
+        query=query, k=k, filters=filters, rerank=rerank, top_n=top_n
+    )
+
     query   = input.query
     k       = input.k
     filters = input.filters
     top_n   = input.top_n
-    rerank = bool(input.rerank)
+    rerank  = bool(input.rerank)
     
 # 1) vector search (with filters)
     logger.debug(f"[SEARCH] query={query!r} k={k} filters={(filters or {})!r} rerank={rerank} top_n={top_n}")
@@ -107,7 +131,6 @@ async def rag_search(
 
 
     # 5) Typed return; Pydantic will coerce dicts to SearchHit models
-    # return {"results": items}
     return schema.RagSearchOutput(results=items)
 
 # Export the FastMCP ASGI app directly 

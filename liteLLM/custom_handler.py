@@ -4,7 +4,8 @@ import aiohttp
 import time
 import uuid
 from typing import List, Dict, Any
-from litellm.types.utils import ModelResponseStream, StreamingChoices, Delta
+# from litellm.types.utils import ModelResponseStream, StreamingChoices, Delta
+import json, re, uuid, time
 
 # How much tool output to keep if a tool message arrives
 _TOOL_FLATTEN_MAX_CHARS = int(os.getenv("TOOL_FLATTEN_MAX_CHARS", "1200"))
@@ -33,31 +34,44 @@ def _truncate(s: str, n: int) -> str:
         return s or ""
     return s[:n] + "…"
 
-def _int_usage_from_text(txt: str) -> Dict[str, int]:
-    # If you don’t count tokens, return reasonable integers (no nulls)
-    approx = max(1, len(txt) // 4)
-    return {"prompt_tokens": 0, "completion_tokens": approx, "total_tokens": approx}
+def _normalize_tool_name(n: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", (n or "").lower())
 
-def _to_plain_dict(obj: Any) -> Dict[str, Any]:
-    if isinstance(obj, dict):
-        return obj
-    try:
-        # pydantic v2
-        if hasattr(obj, "model_dump"):
-            return obj.model_dump()
-        # pydantic v1
-        if hasattr(obj, "dict"):
-            return obj.dict()
-    except Exception:
-        pass
-    try:
-        return json.loads(json.dumps(obj, default=lambda o: getattr(o, "__dict__", str(o))))
-    except Exception:
-        return {"raw": str(obj)}
-    
-def _chunk_text(s: str, n: int = 200):
-    for i in range(0, len(s), n):
-        yield s[i:i+n]    
+def _extract_offered_tools(kwargs: dict):
+    tools_in = kwargs.get("tools")
+    if not tools_in:
+        tools_in = (kwargs.get("optional_params") or {}).get("tools")
+    offered = []
+    for t in tools_in or []:
+        fn = (t or {}).get("function") or {}
+        nm = fn.get("name")
+        if isinstance(nm, str) and nm.strip():
+            offered.append(nm.strip())
+    return offered
+
+def _map_name_to_offered(yandex_name: str, offered_names: list[str]) -> str:
+    """Return the best-matching offered tool name for a model-produced name."""
+    if not offered_names:
+        return yandex_name
+    yn = _normalize_tool_name(yandex_name)
+
+    # exact normalized match
+    for cand in offered_names:
+        if _normalize_tool_name(cand) == yn:
+            return cand
+
+    # substring/suffix/prefix match is common for namespaced tools
+    for cand in offered_names:
+        cn = _normalize_tool_name(cand)
+        if cn.endswith(yn) or cn.startswith(yn) or (yn and yn in cn):
+            return cand
+
+    # if there's only 1 tool offered, map to it
+    if len(offered_names) == 1:
+        return offered_names[0]
+
+    # fallback to original
+    return yandex_name
 
 class YandexCustomLLM:
     """
@@ -81,9 +95,11 @@ class YandexCustomLLM:
         if self.default_model:
             print(f"[Yandex] Using default YANDEX_MODEL='{self.default_model}' from environment")
 
-    # ---------- Embeddings ----------
+    # ---------- Embeddings ----------# DEBUG
     async def aembedding(self, input, model, **kwargs):
+        # DEBUG
         print(f"[Yandex] aembedding called")
+
         # Read user-scoped metadata if provided (tolerant)
         user_info_str = kwargs.get("litellm_params", {}).get("metadata", {}).get("user_api_key_end_user_id", "")
         try:
@@ -130,8 +146,9 @@ class YandexCustomLLM:
 
     # ---------- Chat Completions (non-stream) ----------
     async def acompletion(self, messages, model, **kwargs):
+        # DEBUG
         print(f"[Yandex] acompletion called")
-        # Metadata (tolerant)
+
         user_info_str = kwargs.get("litellm_params", {}).get("metadata", {}).get("user_api_key_end_user_id", "")
         try:
             meta = json.loads(user_info_str) if user_info_str else {}
@@ -173,7 +190,11 @@ class YandexCustomLLM:
             headers["x-data-logging-enabled"] = "false"
 
         # DEBUG
-        print(f"[Yandex] Request: {messages}")
+        # print(f"[Yandex] Request: {messages}")
+
+        offered_tool_names = _extract_offered_tools(kwargs)
+        if offered_tool_names:
+            print(f"[Yandex] Offered tool names from LibreChat: {offered_tool_names}")        
 
         # Flatten OpenAI messages -> Yandex messages
         ynx_messages: List[Dict[str, str]] = []
@@ -232,11 +253,13 @@ class YandexCustomLLM:
         payload = {
             "modelUri": model_uri,
             "completionOptions": completion_opts,
+            "parallelToolCalls": False,
+            "toolChoice": {"mode": "AUTO"},
             "messages": ynx_messages,
         }
 
         # DEBUG
-        print(f"[Yandex] Request payload: {json.dumps(payload, ensure_ascii=False)}")
+        # print(f"[Yandex] Request payload: {json.dumps(payload, ensure_ascii=False)}")
 
         timeout = aiohttp.ClientTimeout(total=120)
         async with aiohttp.ClientSession(timeout=timeout) as session:
@@ -246,7 +269,7 @@ class YandexCustomLLM:
                 jd = await resp.json()
 
         # DEBUG
-        print(f"[Yandex] Response: {json.dumps(jd, ensure_ascii=False)}")
+        # print(f"[Yandex] Response: {json.dumps(jd, ensure_ascii=False)}")
 
         # ---- Extract first alternative ----
         result_root = jd.get("result", {}) or {}
@@ -278,14 +301,20 @@ class YandexCustomLLM:
             tool_calls = []
             for rc in raw_calls:
                 fc = (rc or {}).get("functionCall") or {}
-                name = fc.get("name") or "function"
+                name_from_model = fc.get("name") or "function"
                 args_obj = fc.get("arguments") or {}
+
+                mapped_name = _map_name_to_offered(name_from_model, offered_tool_names)
+                if mapped_name != name_from_model:
+                    print(f"[Yandex] Mapping tool name '{name_from_model}' -> '{mapped_name}'")
+
                 # OpenAI expects arguments as a JSON string
                 args_str = json.dumps(args_obj, ensure_ascii=False)
+
                 tool_calls.append({
                     "id": f"call_{uuid.uuid4().hex[:12]}",
                     "type": "function",
-                    "function": {"name": name, "arguments": args_str},
+                    "function": {"name": mapped_name, "arguments": args_str},
                 })        
 
         now = int(time.time())
@@ -328,7 +357,7 @@ class YandexCustomLLM:
         result = {**base, "choices": [openai_choice]}
 
         # DEBUG
-        print(f"[Yandex] Result: {json.dumps(result, ensure_ascii=False)}")
+        # print(f"[Yandex] Result: {json.dumps(result, ensure_ascii=False)}")
         return result
 
     # ---------- Chat Completions (streaming) ----------
@@ -340,6 +369,8 @@ class YandexCustomLLM:
           and ALWAYS include a "text" key (even "") on every chunk to satisfy LiteLLM.
         """
         print(f"[Yandex] astreaming called")
+        # print(f"[Yandex] astreaming kwargs: {kwargs}")
+
         kwargs = {**kwargs}
         kwargs.pop("stream", None)
 

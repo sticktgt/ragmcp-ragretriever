@@ -1,0 +1,67 @@
+# For more information, see the Configuration Guide:
+# https://www.librechat.ai/docs/configuration/librechat_yaml
+
+# Configuration version (required)
+version: 1.2.1
+
+# Cache settings: Set to true to enable caching
+cache: true
+
+# Example MCP Servers Object Structure
+mcpServers:
+#   everything:
+#     # type: sse # type can optionally be omitted
+#     url: http://localhost:3001/sse
+#     timeout: 60000  # 1 minute timeout for this server, this is the default timeout for MCP servers.
+#   puppeteer:
+#     type: stdio
+#     command: npx
+#     args:
+#       - -y
+#       - "@modelcontextprotocol/server-puppeteer"
+#     timeout: 300000  # 5 minutes timeout for this server
+#   filesystem:
+#     # type: stdio
+#     command: npx
+#     args:
+#       - -y
+#       - "@modelcontextprotocol/server-filesystem"
+#       - /home/user/LibreChat/
+#     iconPath: /home/user/LibreChat/client/public/assets/logo.svg
+#   mcp-obsidian:
+#     command: npx
+#     args:
+#       - -y
+#       - "mcp-obsidian"
+#       - /path/to/obsidian/vault
+  ragretriever:
+    type: streamable-http
+    url: "http://host.docker.internal:8080/mcp"
+    # optional:
+    timeout: 60000        # tool call timeout (ms)
+    initTimeout: 30000    # init timeout (ms)
+    chatMenu: true        # show in chat dropdown
+    serverInstructions: true
+
+# Definition of custom endpoints
+endpoints:
+  custom:
+    - name: "yandex-via-litellm"
+      baseURL: "http://host.docker.internal:4000/v1"
+      apiKey: "fake"
+      headers:
+        Authorization: "Api-Key ${YANDEX_API_KEY}"
+      models:
+        default:
+          - "yandex-chat"
+      modelDisplayLabel: "YandexGPT via LiteLLM"
+      timeoutMs: 120000
+      titleConvo: false
+      summary:  false
+      dropParams:
+        - "stream"
+        - "functions"
+        - "function_call"
+        - "parallel_tool_calls"
+      capabilities:
+        stream: false
