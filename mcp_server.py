@@ -68,7 +68,7 @@ async def _get_store() -> Any:
 @mcp.tool(name="rag.search", description=schema.TOOL_DESCRIPTION)
 async def rag_search(
     query: str,
-    k: int = 2,
+    k: int = 5,
     filters: Optional[Dict[str, Any]] = None,
     rerank: bool = False,
     top_n: Optional[int] = None,

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Annotated
 from pydantic import BaseModel, Field, ConfigDict
 
 TOOL_DESCRIPTION = (
-    "Извлекает релевантные фрагменты знаний из RAG-индекса. "
+    "Извлекает релевантные фрагменты знаний из RAG-индекса. Параметр `k` задает количество результатов поиска."
     "Используйте `filters` для детерминированной фильтрации; `rerank=true` — для LLM-переранжировки; "
     "`top_n` обрезает итог после переранжировки. "
     "Всегда цитируйте источники из `provenance` (приоритет `uri`, иначе `original_name`). "
@@ -37,7 +37,7 @@ class RagSearchArgs(BaseModel):
         ..., description="Пользовательский запрос для поиска. Краткий вопрос или ключевые слова."
     )
     k: Annotated[int, Field(ge=1, le=100)] = Field(
-        2,
+        5,
         description="Размер пула кандидатов из векторного индекса до переранжировки (1–100). Больше — выше полнота, но выше задержка."
     )
     filters: Optional[Dict[str, Any]] = Field(

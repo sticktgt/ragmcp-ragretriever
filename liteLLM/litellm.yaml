@@ -15,6 +15,17 @@ model_list:
       model: "my-custom-llm/text-search-query"
       custom_llm_provider_schema: anthropic
 
+# proxy_settings:
+#   master_key: "sk-litellm-proxy-123"   # required for /mcp routing
+
+# mcp_servers:
+#   ragretriever:
+#     transport: http
+#     url: "http://localhost:8080/mcp"
+
+general_settings:
+  verbose: true    
+
 litellm_settings:
   drop_params: true
   # avoid mid-stream fallbacks which sometimes inject odd control events
