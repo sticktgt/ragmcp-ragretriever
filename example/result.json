@@ -1,0 +1,68 @@
+{
+    "jsonrpc": "2.0",
+    "id": 4,
+    "result": {
+        "content": [
+            {
+                "type": "text",
+                "text": "{\n  \"results\": [\n    {\n      \"text\": \"Приме текста 1\",\n      \"score\": 0.3787540562866425,\n      \"provenance\": {\n        \"title\": \"Название файла 1\",\n        \"source\": \"Название папки 1\",\n        \"hashcode\": \"78d8346ce95704c24031de96ebd55a253e685460960e084cfa0db8564fbef792\",\n        \"created_at\": \"2025-09-09T17:52:13.554867\",\n        \"size_bytes\": 739144,\n        \"original_name\": \"filename1.pptx\",\n        \"source_connector\": \"local\"\n      }\n    },\n    {\n      \"text\": \"Пример текстаа 2\",\n      \"score\": 0.3926381326693411,\n      \"provenance\": {\n        \"title\": \"Название файла 2\",\n        \"source\": \"Название папки 2\",\n        \"category\": \"NarrativeText\",\n        \"filename\": \"filename2.xlsx\",\n        \"filetype\": \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\",\n        \"hashcode\": \"8766f25ae3bb4b73f7e059a3c126fd194337fc7f73038e7403cfd24f104c232c\",\n        \"languages\": [\n          \"rus\"\n        ],\n        \"page_name\": \"Лист1\",\n        \"created_at\": \"2025-09-09T17:52:13.559125\",\n        \"element_id\": \"6870d296c8f34c3d80cdb464b394adcc\",\n        \"size_bytes\": 11128,\n        \"page_number\": 1,\n        \"last_modified\": \"2025-07-24T11:40:42\",\n        \"original_name\": \"filename2.xlsx\",\n        \"file_directory\": \"Путь к папке 2\",\n        \"source_connector\": \"local\"\n      }\n    },\n    {\n      \"text\": \" Пример текста 3\",\n      \"score\": 0.4472157842556299,\n      \"provenance\": {\n        \"title\": \"Название файла 3\",\n        \"source\": \"Папка 3\",\n        \"hashcode\": \"fafecbd12563b1adac503cd6f7cba9bc26c9d3bf20a8813fcaba3470ae969c34\",\n        \"created_at\": \"2025-09-09T17:52:13.554867\",\n        \"size_bytes\": 192216,\n        \"original_name\": \"filename3.html\",\n        \"source_connector\": \"local\"\n      }\n    }\n  ],\n  \"error\": null\n}"
+            }
+        ],
+        "structuredContent": {
+            "results": [
+                {
+                    "text": "Пример текста 1",
+                    "score": 0.3787540562866425,
+                    "provenance": {
+                        "title": "Название файла 1",
+                        "source": "Название папки 1",
+                        "hashcode": "78d8346ce95704c24031de96ebd55a253e685460960e084cfa0db8564fbef792",
+                        "created_at": "2025-09-09T17:52:13.554867",
+                        "size_bytes": 739144,
+                        "original_name": "filename1.pptx",
+                        "source_connector": "local"
+                    }
+                },
+                {
+                    "text": "Пример текста 2",
+                    "score": 0.3926381326693411,
+                    "provenance": {
+                        "title": "Название файла 2",
+                        "source": "Название папки 2",
+                        "category": "NarrativeText",
+                        "filename": "filename2.xlsx",
+                        "filetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        "hashcode": "8766f25ae3bb4b73f7e059a3c126fd194337fc7f73038e7403cfd24f104c232c",
+                        "languages": [
+                            "rus"
+                        ],
+                        "page_name": "Лист1",
+                        "created_at": "2025-09-09T17:52:13.559125",
+                        "element_id": "6870d296c8f34c3d80cdb464b394adcc",
+                        "size_bytes": 11128,
+                        "page_number": 1,
+                        "last_modified": "2025-07-24T11:40:42",
+                        "original_name": "filename2.xlsx",
+                        "file_directory": "Путь к папке 2",
+                        "source_connector": "local"
+                    }
+                },
+                {
+                    "text": "Пример текста 3",
+                    "score": 0.4472157842556299,
+                    "provenance": {
+                        "title": "Название файла 3",
+                        "source": "Папка 3",
+                        "hashcode": "fafecbd12563b1adac503cd6f7cba9bc26c9d3bf20a8813fcaba3470ae969c34",
+                        "created_at": "2025-09-09T17:52:13.554867",
+                        "size_bytes": 192216,
+                        "original_name": "filename3.html",
+                        "source_connector": "local"
+                    }
+                }
+            ],
+            "error": null
+        },
+        "isError": false
+    }
+}

@@ -15,22 +15,6 @@
 
 ---
 
-## Содержание
-
-- [Возможности](#возможности)
-- [Быстрый старт (Docker)](#быстрый-старт-docker)
-- [Запуск локально](#запуск-локально)
-- [Конфигурация](#конфигурация)
-  - [YAML‑файл](#yaml-файл)
-  - [Переопределение переменными окружения](#переопределение-переменными-окружения)
-  - [Провайдеры эмбеддингов](#провайдеры-эмбеддингов)
-  - [Провайдеры доранжирования](#провайдеры-доранжирования)
-  - [Векторные хранилища](#векторные-хранилища)
-- [Контракт MCP‑инструмента](#контракт-mcp-инструмента)
-- [Операционные заметки](#операционные-заметки)
-
----
-
 ## Возможности по настройке
 
 **Подход «env‑сначала»**: переопределение любого ключа YAML переменными окружения вида `RS__SECTION__SUBKEY=value`. (Любые переменные, начинающиеся с `RS__`, могут динамически добавлять новые ключи конфигурации)
@@ -38,7 +22,7 @@
 Список переменных на базе текущего файла конфигурации приведен для справки внизу страницы
 ---
 
-## Быстрый старт (Docker)
+## Возможности запуска
 
 Запуск из командной строки (пример):
 
@@ -46,7 +30,7 @@
 python -m ragretriever.main
 ```
 
-Сборка образа (пример):
+Сборка docker образа (пример):
 
 ```bash
 docker build --pull --rm -f 'ragretriever/Dockerfile' -t 'ragretriever:latest' 'ragretriever'
@@ -55,7 +39,7 @@ docker build --pull --rm -f 'ragretriever/Dockerfile' -t 'ragretriever:latest' '
 Запуск образ (пример):
 
 ```bash
-docker run --rm -it -p 8080:8080 --add-host=host.docker.internal:host-gateway -e "RS__STORAGE__PGVECTOR__HOST=host.docker.internal" -e "RS__RERANK__LITELLM__API_BASE=http://host.docker.internal:4000/v1" -e "RS__EMBEDDING__LITELLM__API_BASE=http://host.docker.internal:4000" ragretriever:latest /bin/bash
+docker run --rm -it -p 8080:8080 --add-host=host.docker.internal:host-gateway -e "RS__STORAGE__PGVECTOR__HOST=host.docker.internal" -e "RS__RERANK__LITELLM__API_BASE=http://host.docker.internal:4000/v1" -e "RS__EMBEDDING__LITELLM__API_BASE=http://host.docker.internal:4000" -e "RS__RERANK__LITELLM__API_KEY=AQ#######################" -e "RS__RERANK__LITELLM__FOLDER_ID=#######################" -e "RS__EMBEDDING__LITELLM__API_KEY=AQ#######################" -e "RS__EMBEDDING__LITELLM__FOLDER_ID=#######################"  ragretriever:latest /bin/bash
 ```
 
 ## Конфигурация
@@ -135,7 +119,9 @@ ASGI‑приложение публикует MCP‑эндпоинт по пу�
 
 Внутри: выполняется векторный поиск по выбранному хранилищу, затем опциональное LLM‑доранжирование и финальная обрезка до `top_n`.
 
----
+- **Пример результата**
+result.json в папке example
+
 ## Дополнительные конфигурации внешних инструментов
 
 В папке liteLLM находится конфигурация litellm.yaml и custom handler для поддержки YandexGPT.
