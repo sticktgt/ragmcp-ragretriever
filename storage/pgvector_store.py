@@ -1,6 +1,6 @@
-import logging
+# import logging
 import traceback
-import psycopg2
+# import psycopg2
 from typing import List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_postgres import PGVector
@@ -26,13 +26,16 @@ class PGVectorStore(VectorStoreBase):
             f"postgresql+psycopg2://{cfg["pgvector"]['user']}:{cfg["pgvector"]['password']}"
             f"@{cfg["pgvector"]['host']}:{cfg["pgvector"].get('port', 5432)}/{cfg["pgvector"]['database']}"
         )
-
-        self.vstore = PGVector(
-            collection_name=cfg["pgvector"]["collection"],
-            connection=connection_string,
-            embeddings=embedding_function,
-            use_jsonb=cfg["pgvector"]["use_jsonb"],
-        )
+        try:
+            self.vstore = PGVector(
+                collection_name=cfg["pgvector"]["collection"],
+                connection=connection_string,
+                embeddings=embedding_function,
+                use_jsonb=cfg["pgvector"]["use_jsonb"],
+            )
+        except Exception as e:
+            logger.debug(traceback.format_exc())
+            raise e
 
 
     def similarity_search_with_score(self, query: str, k: int = 5, filters: Optional[dict] = None) -> List[Tuple[Document, float]]:

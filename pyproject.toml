@@ -9,14 +9,22 @@ description = "Standalone MCP retriever service for RAG (rag.search)"
 requires-python = ">=3.10"
 dependencies = [
   "uvicorn[standard]",
-  "starlette>=0.37",
-  "mcp>=1.2.0",          # official MCP SDK
-  "pyyaml>=6.0",         # used by your config.py
+  "starlette>=0.46.2",
+  "mcp>=1.12.4",
+  "pyyaml>=6.0.2",
   # Your storage backends depend on these; keep them if your adapters need them:
-  "langchain>=0.2.0",
-  "langchain-community>=0.2.0",
-  "psycopg2-binary>=2.9.9",  # PGVector adapter
-  "pymilvus>=2.4.0",         # Milvus adapter
+  "langchain>=0.3.26",
+  "langchain-community>=0.3.27",
+  "langchain-openai==0.3.28",
+  "langchain-postgres==0.0.15",
+  "langchain_milvus==0.2.1",
+  #
+  "psycopg2-binary>=2.9.10",
+  # "pymilvus>=2.5.15",
+  "langchain_milvus>=0.2.1",
+  # 
+  "yandexcloud==0.304.0",
+
 ]
 
 [tool.setuptools.packages.find]

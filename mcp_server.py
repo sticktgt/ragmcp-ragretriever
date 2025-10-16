@@ -4,8 +4,8 @@ from typing import Any, Dict, List, Optional
 
 from mcp.server.fastmcp import FastMCP
 
-from fastapi import FastAPI, Response
-from fastapi.responses import JSONResponse
+# from fastapi import FastAPI, Response
+# from fastapi.responses import JSONResponse
 
 from .config import CONFIG
 from .utils.logger import get_logger
@@ -58,10 +58,14 @@ async def _get_store() -> Any:
         if _STORE is None:  # double-checked locking
             store_cfg = CONFIG.get("storage") or {}
             emb_cfg = CONFIG.get("embedding") or {}
-            emb = get_embedding_function(emb_cfg)
-            _STORE = get_vector_store(store_cfg, emb)
-            logger.info("[MCP] retriever initialized (store=%s)",
-                        store_cfg.get("store_type") or "unknown")
+            try:
+                emb = get_embedding_function(emb_cfg)
+                _STORE = get_vector_store(store_cfg, emb)
+                logger.info("[MCP] retriever initialized (store=%s)",
+                            store_cfg.get("store_type") or "unknown")
+            except Exception:
+                logger.exception("[INIT] Vector store initialization failed (store_type=%s)", store_cfg.get("store_type"))
+                raise                
     return _STORE
 
 # ----- tool implementation -----
@@ -86,11 +90,19 @@ async def rag_search(
 # 1) vector search (with filters)
     logger.debug(f"[SEARCH] query={query!r} k={k} filters={(filters or {})!r} rerank={rerank} top_n={top_n}")
 
-    store = await _get_store()
+    try:
+        store = await _get_store()
+    except Exception as e:
+        error_message = f"[INIT]: {e}"
+        logger.error(error_message)
+        return {"results": [], "error": error_message}
+
     try:
         results = store.similarity_search_with_score(query, k=k, filters=filters)
     except Exception as e:
-        return {"results": [], "error": "search_failed"}
+        error_message = f"[SEARCH]: {e}"
+        logger.error(error_message)
+        return {"results": [], "error": error_message}
 
     items: List[Dict[str, Any]] = []
     for doc, score in results:

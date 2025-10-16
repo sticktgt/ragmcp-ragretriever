@@ -190,6 +190,7 @@ class YandexCustomLLM:
             headers["x-data-logging-enabled"] = "false"
 
         # DEBUG
+        # print(f"")
         # print(f"[Yandex] Request: {messages}")
 
         offered_tool_names = _extract_offered_tools(kwargs)
@@ -259,6 +260,7 @@ class YandexCustomLLM:
         }
 
         # DEBUG
+        # print(f"")
         # print(f"[Yandex] Request payload: {json.dumps(payload, ensure_ascii=False)}")
 
         timeout = aiohttp.ClientTimeout(total=120)
@@ -269,6 +271,7 @@ class YandexCustomLLM:
                 jd = await resp.json()
 
         # DEBUG
+        # print(f"")
         # print(f"[Yandex] Response: {json.dumps(jd, ensure_ascii=False)}")
 
         # ---- Extract first alternative ----
@@ -357,6 +360,7 @@ class YandexCustomLLM:
         result = {**base, "choices": [openai_choice]}
 
         # DEBUG
+        # print(f"")
         # print(f"[Yandex] Result: {json.dumps(result, ensure_ascii=False)}")
         return result
 
@@ -369,6 +373,7 @@ class YandexCustomLLM:
           and ALWAYS include a "text" key (even "") on every chunk to satisfy LiteLLM.
         """
         print(f"[Yandex] astreaming called")
+        # print(f"")
         # print(f"[Yandex] astreaming kwargs: {kwargs}")
 
         kwargs = {**kwargs}
