@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from mcp.server.fastmcp import FastMCP
+from time import perf_counter
 
 # from fastapi import FastAPI, Response
 # from fastapi.responses import JSONResponse
@@ -49,6 +50,13 @@ mcp.settings.streamable_http_path = "/mcp"
 # ---- lazy, concurrency-safe bootstrap (no custom lifespan) ----
 _STORE: Any | None = None
 _INIT_LOCK = asyncio.Lock()
+
+_limits = CONFIG.get("limits") or {}
+_MAX_CONCURRENT_SEARCH = int(_limits.get("max_concurrent_search", 32))
+_MAX_CONCURRENT_RERANK = int(_limits.get("max_concurrent_rerank", 4))
+
+_SEARCH_SEMAPHORE = asyncio.Semaphore(_MAX_CONCURRENT_SEARCH)
+_RERANK_SEMAPHORE = asyncio.Semaphore(_MAX_CONCURRENT_RERANK)
 
 async def _get_store() -> Any:
     global _STORE
@@ -97,8 +105,17 @@ async def rag_search(
         logger.error(error_message)
         return {"results": [], "error": error_message}
 
+    loop = asyncio.get_running_loop()
     try:
-        results = store.similarity_search_with_score(query, k=k, filters=filters)
+        t0 = perf_counter()
+        async with _SEARCH_SEMAPHORE:
+            # run blocking search in executor so we don't block the event loop
+            results = await loop.run_in_executor(
+                None,
+                lambda: store.similarity_search_with_score(query, k=k, filters=filters),
+            )
+        logger.debug("[METRIC] vec_ms=%.1f k=%d size=%d",
+                     (perf_counter() - t0) * 1000, k, len(results) if results else 0)
     except Exception as e:
         error_message = f"[SEARCH]: {e}"
         logger.error(error_message)
@@ -126,7 +143,10 @@ async def rag_search(
         else:
             try:
                 before_preview = [it["provenance"].get("original_name", "?") for it in items[:3]]
-                items = await rerank_items_from_config(query, items, rerank_cfg)
+                t0 = perf_counter()
+                async with _RERANK_SEMAPHORE:
+                    items = await rerank_items_from_config(query, items, rerank_cfg)
+                logger.debug("[METRIC] rerank_ms=%.1f", (perf_counter() - t0) * 1000)
                 after_preview = [it["provenance"].get("original_name", "?") for it in items[:3]]
                 logger.debug(f"[RERANK] Provider={cfg_provider} before={before_preview} after={after_preview}")
             except Exception as e:
