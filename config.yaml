@@ -5,6 +5,8 @@ server:
 limits:
   max_concurrent_search: 8   # DB protection & overall throughput
   max_concurrent_rerank: 2    # LLM protection / rate limits
+  search_timeout_s: 15.0      # timeout for vector DB search
+  rerank_timeout_s: 20.0     # timeout for LLM reranking
 
 storage:
   store_type: pgvector # "milvus" or "pgvector"
@@ -27,17 +29,17 @@ rerank:
   provider: liteLLM           # "yandexGPT", "liteLLM", "none"
   top_n: 5
   liteLLM:                 # used when provider: "litellm" (OpenAI-compatible proxy)
-    model: yandex-embedding   #alias of the proxy route in litellm.yaml
+    model: yandex-chat   #alias of the proxy route in litellm.yaml
     api_base: http://localhost:4000/v1
-    api_key:  $$$$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$$$
+    api_key:  $$$$$$$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$$$$$$
     yandex_model: yandexgpt-lite # e.g., "yandexgpt" or "yandexgpt-lite"
     disable_logging: false
     temperature: 0.0
     timeout: 30
   yandexGPT:               # used when provider: "yandexgpt" (direct)
-    api_key: $$$$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$$$
+    api_key: $$$$$$$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$$$$$$
     model: yandexgpt-lite # e.g., "yandexgpt" or "yandexgpt-lite"
     # disable_logging: false
     temperature: 0.0
@@ -49,11 +51,11 @@ embedding:
   liteLLM:
     model: yandex-embedding
     api_base: http://localhost:4000
-    api_key: $$$$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$$$
+    api_key: $$$$$$$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$$$$$$
   yandexGPT:
-    api_key: $$$$$$$$$$$$$$
-    folder_id: $$$$$$$$$$$$$$
+    api_key: $$$$$$$$$$$$$$$$$
+    folder_id: $$$$$$$$$$$$$$$$$
     doc_model_name: text-search-doc
     model_version: latest
     sleep_interval: 2.0

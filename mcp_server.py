@@ -58,6 +58,9 @@ _MAX_CONCURRENT_RERANK = int(_limits.get("max_concurrent_rerank", 4))
 _SEARCH_SEMAPHORE = asyncio.Semaphore(_MAX_CONCURRENT_SEARCH)
 _RERANK_SEMAPHORE = asyncio.Semaphore(_MAX_CONCURRENT_RERANK)
 
+_SEARCH_TIMEOUT_S = float(_limits.get("search_timeout_s", 15.0))
+_RERANK_TIMEOUT_S = float(_limits.get("rerank_timeout_s", 20.0))
+
 async def _get_store() -> Any:
     global _STORE
     if _STORE is not None:
@@ -109,13 +112,19 @@ async def rag_search(
     try:
         t0 = perf_counter()
         async with _SEARCH_SEMAPHORE:
-            # run blocking search in executor so we don't block the event loop
-            results = await loop.run_in_executor(
-                None,
-                lambda: store.similarity_search_with_score(query, k=k, filters=filters),
+            results = await asyncio.wait_for(
+                loop.run_in_executor(
+                    None,
+                    lambda: store.similarity_search_with_score(query, k=k, filters=filters),
+                ),
+                timeout=_SEARCH_TIMEOUT_S,
             )
         logger.debug("[METRIC] vec_ms=%.1f k=%d size=%d",
                      (perf_counter() - t0) * 1000, k, len(results) if results else 0)
+    except asyncio.TimeoutError:
+        error_message = f"[SEARCH TIMEOUT]: {e}"
+        logger.error(error_message)
+        return {"results": [], "error": error_message}       
     except Exception as e:
         error_message = f"[SEARCH]: {e}"
         logger.error(error_message)
@@ -142,13 +151,23 @@ async def rag_search(
             logger.warning("[RERANK] Requested by client, but CONFIG['rerank']['provider'] is not set; skipping")
         else:
             try:
-                before_preview = [it["provenance"].get("original_name", "?") for it in items[:3]]
+                # DEBUG
+                # before_preview = [it["provenance"].get("original_name", "?") for it in items[:3]]
                 t0 = perf_counter()
                 async with _RERANK_SEMAPHORE:
-                    items = await rerank_items_from_config(query, items, rerank_cfg)
+                    items = await asyncio.wait_for(
+                        rerank_items_from_config(query, items, rerank_cfg),
+                        timeout=_RERANK_TIMEOUT_S,
+                    )
                 logger.debug("[METRIC] rerank_ms=%.1f", (perf_counter() - t0) * 1000)
-                after_preview = [it["provenance"].get("original_name", "?") for it in items[:3]]
-                logger.debug(f"[RERANK] Provider={cfg_provider} before={before_preview} after={after_preview}")
+                # DEBUG
+                # after_preview = [it["provenance"].get("original_name", "?") for it in items[:3]]
+                # logger.debug(f"[RERANK] Provider={cfg_provider} before={before_preview} after={after_preview}")
+            except asyncio.TimeoutError:
+                error_message = f"[RERANK TIMEOUT]: {e}"
+                logger.error(error_message)               
+                # Fall back to vector order; keep service responsive
+                return {"results": items, "error": error_message}                
             except Exception as e:
                 logger.error(f"[RERANK] Unexpected failure: {e}")
 
